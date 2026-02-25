@@ -1,0 +1,14 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Banco de Dados Local (SQLite)
+*.sqlite3
+*.db
