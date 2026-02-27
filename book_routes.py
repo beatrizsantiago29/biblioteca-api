@@ -6,8 +6,20 @@ from models import Livro, Autor, Usuario
 
 book_router = APIRouter(prefix="/book", tags=["book"])
 
+# rota principal: listar livros
+@book_router.get("/")
+async def listar(session: Session = Depends(pegar_sessao)):
+    dados = session.query(Livro).all()
+    return {
+        "livros" : dados
+    }
+
+# rota cadastro de livro: requer perfil de admin
 @book_router.post("/cadastrar_livro")
 async def cadastrar(livro_schema: LivroSchema, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
+    if not usuario.admin:
+        raise HTTPException(status_code=401, detail="Você não possui autorização para fazer essa ação.")
+    
     # verificar se o autor é válido
     autor = session.query(Autor).filter(Autor.id == livro_schema.id_autor).first()
     if not autor:
@@ -23,11 +35,15 @@ async def cadastrar(livro_schema: LivroSchema, session: Session = Depends(pegar_
         return {"mensagem":f"livro {livro_schema.titulo} cadastrado com sucesso"}
 
 
-# @book_router.delete("/delete")
-# async def deletar(isbn: str, session: Session = Depends(pegar_sessao)):
-#     livro = session.query(Livro).filter(Livro.isbn == isbn).first()
-#     if livro:
-#         session.delete(livro)
-#         session.commit
-#         return {"mensagem":f"livro {livro.titulo} deletado com sucesso"}
-    
+# rota para excluir livro: necessario perfil de admin
+@book_router.delete("/excluir/{id_livro}")
+async def deletar(id_livro: int, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
+    if not usuario.admin:
+        raise HTTPException(status_code=401, detail="Você não possui autorização para fazer essa ação.")
+    livro = session.query(Livro).filter(Livro.id == id_livro).first()
+    if not livro:
+        raise HTTPException(status_code=400, detail="Livro não encontrado.")
+    else: 
+        session.delete(livro)
+        session.commit()
+        return {"mensagem":f"livro {id_livro} deletado com sucesso"}

@@ -48,7 +48,7 @@ async def cadastrar(usuario_schema: UsuarioSchema, session: Session = Depends(pe
     else:
         # criptografar senha antes de salvar no banco
         senha_criptografada = bcrypt_context.hash(usuario_schema.senha)
-        novo_usuario = Usuario(usuario_schema.nome, usuario_schema.email, senha_criptografada)
+        novo_usuario = Usuario(nome=usuario_schema.nome, email=usuario_schema.email, senha=senha_criptografada, admin=usuario_schema.admin)
 
         # adicionar usuario
         session.add(novo_usuario)

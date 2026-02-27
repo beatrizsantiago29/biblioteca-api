@@ -4,25 +4,25 @@ from dependencies import pegar_sessao, verificar_token
 from models import Livro, Emprestimo, Usuario
 from datetime import timedelta, timezone, datetime
 
+# Precisa de usuario logado
 loan_router = APIRouter(prefix="/emprestimo", tags=["emprestimo"], dependencies=[Depends(verificar_token)])
 
-# Rota principal: lista os emprestimo do usuario
+# Rota principal: lista os emprestimos do usuario
 @loan_router.get("/")
 async def listar(session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
-    dados = session.query(Emprestimo.id_livro, Emprestimo.data_emprestimo, Emprestimo.data_devolucao).filter(Emprestimo.id_usuario == usuario.id, Emprestimo.status == "ativo")
-    emprestimos = {t[0] : (t[1], t[2]) for t in dados}
-    if not emprestimos:
+    dados = session.query(Emprestimo).filter(Emprestimo.id_usuario == usuario.id, Emprestimo.status == "ativo").all()
+    if not dados:
         return {"mensagem": "Nenhum empréstimo registrado."}
     else:
-        return emprestimos
+        return {"emprestimos" : dados}
+
 
 # Rota de alugar livro:
 # verifica se o livro é válido, se o usuário já possui empréstimo do livro e se há cópias disponíveis
 # para empréstimo.
 @loan_router.post("/alugar/{id_livro}")
 async def alugar(id_livro: int, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
-
-    # verificar se existe o usuario ja alugou o livro
+    # verificar se o usuario ja alugou o livro
     emprestimo = session.query(Emprestimo).filter(Emprestimo.id_livro == id_livro, Emprestimo.id_usuario == usuario.id, Emprestimo.status == "ativo").first()
     if emprestimo:
         return {
@@ -41,6 +41,6 @@ async def alugar(id_livro: int, session: Session = Depends(pegar_sessao), usuari
         livro.qtd_disponivel -= 1
         session.add(novo_emprestimo)
         session.commit()
-        return {"mensagem": f"Emprestimo criado com sucesso.",
+        return {"mensagem": f"Emprestimo do livro {livro.titulo} criado com sucesso.",
                 "livro": livro
                 }

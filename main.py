@@ -22,11 +22,12 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl="auth/login-form")
 from auth_routes import auth_router
 from book_routes import book_router
 from loan_routes import loan_router
-from author_routes import author_router
-
+from autor_routes import autor_router
+from admin_routes import admin_router
 # incluindo rotas
 app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(autor_router)
 app.include_router(book_router)
 app.include_router(loan_router)
-app.include_router(author_router)
 # para rodar o código, executar no terminal: uvicorn main:app --reload
