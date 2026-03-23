@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from dependencies import pegar_sessao, verificar_token, verificar_admin
+from dependencies import pegar_sessao, verificar_admin
 from models import Usuario
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(verificar_admin)])
@@ -16,7 +16,7 @@ async def listar(session: Session = Depends(pegar_sessao)):
 async def excluir(id_usuario: int, session: Session = Depends(pegar_sessao)):
     usuario = session.query(Usuario).filter(Usuario.id == id_usuario).first()
     if not usuario:
-        raise HTTPException(status_code=400, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
     else:
         session.delete(usuario)
         session.commit()

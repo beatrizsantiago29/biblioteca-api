@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from models import Usuario
@@ -35,16 +35,16 @@ async def home():
     """
     Essa é a rota padrão de autenticação do nosso sistema
     """
-    return {"mensagem": "Você acessou a rota padrão de autenticação", "autenticado": False}
+    return {"mensagem": "Você acessou a rota padrão de autenticação"}
 
 
 # rota de cadastro de usuario
-@auth_router.post("/cadastrar_usuario")
+@auth_router.post("/cadastrar_usuario", status_code=status.HTTP_201_CREATED)
 async def cadastrar(usuario_schema: UsuarioSchema, session: Session = Depends(pegar_sessao)):
     usuario = session.query(Usuario).filter(Usuario.email==usuario_schema.email).first()
     if usuario:
         # usuario ja existe
-        raise HTTPException(status_code=400, detail="Credenciais ja cadastradas.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Credenciais ja cadastradas.")
     else:
         # criptografar senha antes de salvar no banco
         senha_criptografada = bcrypt_context.hash(usuario_schema.senha)
@@ -65,7 +65,7 @@ async def cadastrar(usuario_schema: UsuarioSchema, session: Session = Depends(pe
 async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sessao)):
     usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
     if not usuario:
-        raise HTTPException(status_code=400, detail="Credenciais inválidas")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
     else:
         # JWT Bearer
         # headers = {"Access-Token":"Bearer token"}
@@ -83,7 +83,7 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
 async def login_form(dados_form: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(pegar_sessao)):
     usuario = autenticar_usuario(dados_form.username, dados_form.password, session)
     if not usuario:
-        raise HTTPException(status_code=400, detail="Credenciais inválidas")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
     else:
         access_token = criar_token(usuario.id)
         return {

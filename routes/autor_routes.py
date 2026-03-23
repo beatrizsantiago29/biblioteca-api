@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from dependencies import pegar_sessao, verificar_token
 from models import Autor, Usuario
@@ -16,13 +16,13 @@ async def listar(session: Session = Depends(pegar_sessao)):
 
 # rota de cadastrar autor
 # requer perfil de admin
-@autor_router.post("/cadastrar_autor")
+@autor_router.post("/cadastrar_autor", status_code=status.HTTP_201_CREATED)
 async def cadastrar(autor_schema: AutorSchema, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     if not usuario.admin:
-        raise HTTPException(status_code=401, detail="Você não possui autorização para fazer essa ação.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não possui autorização para fazer essa ação.")
     autor = session.query(Autor).filter(Autor.nome == autor_schema.nome).first()
     if autor:
-        raise HTTPException(status_code=400, detail="Autor já cadastrado.")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Autor já cadastrado.")
     else:
         novo_autor = Autor(autor_schema.nome)
         session.add(novo_autor)
@@ -35,10 +35,10 @@ async def cadastrar(autor_schema: AutorSchema, session: Session = Depends(pegar_
 @autor_router.delete("/excluir_autor/{id_autor}")
 async def excluir(id_autor: int, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     if not usuario.admin:
-        raise HTTPException(status_code=401, detail="Você não possui autorização para fazer essa ação.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não possui autorização para fazer essa ação.")
     autor = session.query(Autor).filter(Autor.id == id_autor).first()
     if not autor:
-        raise HTTPException(status_code=400, detail="Autor não encontrado.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Autor não encontrado.")
     else:
         session.delete(autor)
         session.commit()
