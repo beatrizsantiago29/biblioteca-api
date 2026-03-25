@@ -12,7 +12,7 @@ loan_router = APIRouter(prefix="/emprestimo", tags=["emprestimo"], dependencies=
 async def listar(session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     dados = session.query(Emprestimo).filter(Emprestimo.id_usuario == usuario.id).all()
     if not dados:
-        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="Nenhum emprestimo registrado")
+        return {"mensagem":"Nenhum emprestimo registrado."}
     else:
         return {"emprestimos" : dados}
 
@@ -21,7 +21,7 @@ async def listar(session: Session = Depends(pegar_sessao), usuario: Usuario = De
 async def listar_ativos(session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     dados = session.query(Emprestimo).filter(Emprestimo.id_usuario == usuario.id, Emprestimo.status == "ativo").all()
     if not dados:
-        raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="Nenhum emprestimo ativo")
+        return {"mensagem":"Nenhum emprestimo ativo registrado."}
     else:
         return {"emprestimos" : dados}
 
@@ -48,19 +48,17 @@ async def alugar(id_livro: int, session: Session = Depends(pegar_sessao), usuari
         livro.qtd_disponivel -= 1
         session.add(novo_emprestimo)
         session.commit()
-        return {"mensagem": f"Empréstimo do livro {livro.titulo} criado com sucesso.",
-                "livro": livro
-                }
+        return {"mensagem": f"Empréstimo do livro {livro.titulo} criado com sucesso."}
     
 # rota de devolução de livro
-@loan_router.patch("/devolucao/{id_livro}")
-async def devolver(id_livro: int, usuario: Usuario = Depends(verificar_token), session: Session = Depends(pegar_sessao)):
-    emprestimo = session.query(Emprestimo).filter(Emprestimo.id_usuario == usuario.id, Emprestimo.id_livro == id_livro, Emprestimo.status == "ativo").first()
+@loan_router.patch("/devolucao/{id_emprestimo}")
+async def devolver(id_emprestimo: int, session: Session = Depends(pegar_sessao), usuario: Usuario=Depends(verificar_token)):
+    emprestimo = session.query(Emprestimo).filter(Emprestimo.id == id_emprestimo, Emprestimo.id_usuario==usuario.id, Emprestimo.status == "ativo").first()
     if not emprestimo:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Não existe um empréstimo ativo registrado para o livro {id_livro}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Empréstimo {id_emprestimo} não ativo ou não encontrado.")
     else:
-        livro = session.query(Livro).filter(Livro.id == id_livro).first()
+        livro = session.query(Livro).filter(Livro.id == emprestimo.id_livro).first()
         livro.qtd_disponivel += 1
         emprestimo.status = "concluido"
         session.commit()
-        return {"mensagem": f"Devolução do livro {id_livro} concluída com sucesso."}
+        return {"mensagem": f"Devolução do livro {livro.titulo} concluída com sucesso."}
