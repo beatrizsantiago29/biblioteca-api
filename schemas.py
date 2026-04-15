@@ -5,7 +5,6 @@ class UsuarioSchema(BaseModel):
     nome:str
     email:str
     senha:str
-    ativo:Optional[bool]
     admin:Optional[bool]
 
     class Config:

@@ -27,19 +27,15 @@ def autenticar_usuario(email: str, senha: str, session: Session):
         return False
     elif not bcrypt_context.verify(senha, usuario.senha):
         return False
+    if not usuario.ativo:
+        usuario.ativo = True
+        session.commit()
+        session.refresh(usuario)
     return usuario
 
 
-@auth_router.get("/")
-async def home():
-    """
-    Essa é a rota padrão de autenticação do nosso sistema
-    """
-    return {"mensagem": "Você acessou a rota padrão de autenticação"}
-
-
 # rota de cadastro de usuario
-@auth_router.post("/cadastrar_usuario", status_code=status.HTTP_201_CREATED)
+@auth_router.post("/cadastro", status_code=status.HTTP_201_CREATED)
 async def cadastrar(usuario_schema: UsuarioSchema, session: Session = Depends(pegar_sessao)):
     usuario = session.query(Usuario).filter(Usuario.email==usuario_schema.email).first()
     if usuario:

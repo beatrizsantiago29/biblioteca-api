@@ -30,8 +30,8 @@ O sistema permite o gerenciamento completo do ciclo de vida de uma biblioteca:
 
 1. **Clone o repositório:**
    ```
-   git clone [https://github.com/seu-usuario/nome-do-repo.git](https://github.com/seu-usuario/nome-do-repo.git)
-   cd nome-do-repositorio
+   git clone [https://github.com/beatrizsantiago29/biblioteca-api.git](https://github.com/beatrizsantiago29/biblioteca-api.git)
+   cd biblioteca-api
    ```
 
 2. **Crie e ative o ambiente virtual:**

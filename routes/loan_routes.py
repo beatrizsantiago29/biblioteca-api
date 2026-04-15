@@ -17,7 +17,7 @@ async def listar(session: Session = Depends(pegar_sessao), usuario: Usuario = De
         return {"emprestimos" : dados}
 
 # Lista emprestimos ativos do usuario
-@loan_router.get("/listar_emprestimos_ativos")
+@loan_router.get("/emprestimos_ativos")
 async def listar_ativos(session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     dados = session.query(Emprestimo).filter(Emprestimo.id_usuario == usuario.id, Emprestimo.status == "ativo").all()
     if not dados:
@@ -51,7 +51,7 @@ async def alugar(id_livro: int, session: Session = Depends(pegar_sessao), usuari
         return {"mensagem": f"Empréstimo do livro {livro.titulo} criado com sucesso."}
     
 # rota de devolução de livro
-@loan_router.patch("/devolucao/{id_emprestimo}")
+@loan_router.patch("/devolver/{id_emprestimo}")
 async def devolver(id_emprestimo: int, session: Session = Depends(pegar_sessao), usuario: Usuario=Depends(verificar_token)):
     emprestimo = session.query(Emprestimo).filter(Emprestimo.id == id_emprestimo, Emprestimo.id_usuario==usuario.id, Emprestimo.status == "ativo").first()
     if not emprestimo:

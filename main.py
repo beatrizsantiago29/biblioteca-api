@@ -19,10 +19,10 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="auth/login-form")
 
-from routes import admin_router, auth_router, autor_router, book_router, loan_router
+from routes import user_router, auth_router, autor_router, book_router, loan_router
 # incluindo rotas
 app.include_router(auth_router)
-app.include_router(admin_router)
+app.include_router(user_router)
 app.include_router(autor_router)
 app.include_router(book_router)
 app.include_router(loan_router)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from dependencies import pegar_sessao, verificar_token
-from models import Autor, Usuario
+from models import Autor, Usuario, Livro
 from schemas import AutorSchema
 
 autor_router = APIRouter(prefix="/autor", tags=["autor"])
@@ -16,7 +16,7 @@ async def listar(session: Session = Depends(pegar_sessao)):
 
 # rota de cadastrar autor
 # requer perfil de admin
-@autor_router.post("/cadastrar_autor", status_code=status.HTTP_201_CREATED)
+@autor_router.post("/cadastro", status_code=status.HTTP_201_CREATED)
 async def cadastrar(autor_schema: AutorSchema, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     if not usuario.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não possui autorização para fazer essa ação.")
@@ -31,8 +31,25 @@ async def cadastrar(autor_schema: AutorSchema, session: Session = Depends(pegar_
             "mensagem": f"Autor {autor_schema.nome} cadastrado com sucesso."
         }
     
+# rota para editar autor: necessario perfil de admin
+@autor_router.put("/{id_autor}")
+async def editar(id_autor: int, autor_schema: AutorSchema, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
+    if not usuario.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não possui autorização para fazer essa ação.")
+    autor = session.query(Autor).filter(Autor.id == id_autor).first()
+    if not autor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Autor não encontrado.")
+    else:
+        autor.nome = autor_schema.nome
+        session.commit()
+        session.refresh(autor)
+        return {
+            "mensagem" : f"Autor {id_autor} editado com sucesso." 
+        }
+
+    
 # rota para excluir autor: necessario perfil de admin
-@autor_router.delete("/excluir_autor/{id_autor}")
+@autor_router.delete("/{id_autor}")
 async def excluir(id_autor: int, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
     if not usuario.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não possui autorização para fazer essa ação.")
@@ -40,6 +57,10 @@ async def excluir(id_autor: int, session: Session = Depends(pegar_sessao), usuar
     if not autor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Autor não encontrado.")
     else:
+        # verificar se o autor tem livros cadastrados
+        livro = session.query(Livro).filter(Livro.id_autor == id_autor).first()
+        if livro:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="O autor possui livros cadastrados.")
         session.delete(autor)
         session.commit()
         return {
